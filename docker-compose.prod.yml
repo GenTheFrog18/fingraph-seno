@@ -1,0 +1,34 @@
+services:
+  backend:
+    environment:
+      APP_ENV: production
+      DEMO_MODE: "false"
+      QRIS_DEMO_MODE: "false"
+      ENABLE_DEMO_ENDPOINTS: "false"
+      PUBLIC_REGISTRATION_ENABLED: "false"
+      ENABLE_API_DOCS: ${ENABLE_API_DOCS:-false}
+      AUTO_SEED: "false"
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 4G }
+        reservations: { memory: 1G }
+  frontend:
+    build:
+      args:
+        NEXT_PUBLIC_DEMO_MODE: "false"
+    environment:
+      NEXT_PUBLIC_DEMO_MODE: "false"
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 1G }
+        reservations: { memory: 256M }
+  postgres:
+    deploy:
+      resources:
+        limits: { cpus: "1.5", memory: 2G }
+        reservations: { memory: 512M }
+  neo4j:
+    deploy:
+      resources:
+        limits: { cpus: "2.0", memory: 3G }
+        reservations: { memory: 1G }
