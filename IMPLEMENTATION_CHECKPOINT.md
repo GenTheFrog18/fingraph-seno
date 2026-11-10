@@ -11,12 +11,12 @@ Updated: 2026-11-10
 - Gate 4: passed. The analyst shell includes a network-case list/detail view, status transitions, evidence observations, and a privacy-preserving case graph summary.
 - Gate 5: passed. The final isolated backend run applied Alembic head and passed 33 tests. Frontend typecheck, lint (one pre-existing warning in `auth.ts`), and production build passed. The Docker image built successfully and imports `torch 2.5.1+cpu`, `torch-geometric 2.6.1`, and `app.main`.
 - Live evidence: built-image demo trained `qris_graph_graphsage_20261110_034112` with artifact hash `e248ff073fa487839adb708c098b6dc5b4c3affc4d457535ea4a19ef51a264db`, temporal split, heterogeneous GraphSAGE, validation PR-AUC `0.225`, test PR-AUC `0.2937`; six signed PSP events were accepted, all six received complete learned-GNN scores, and one network case was opened.
-- Gate 6: in progress. Package the required return ZIP and perform the final artifact/working-tree audit.
+- Gate 6: passed. `outputs/FINGRAPH_IMPLEMENTATION_RETURN.zip` contains the seven required Markdown reports plus sanitized evidence (10 files total), has no database/model-binary/credential file, and has SHA-256 `dae6df5517e0cce84ab69d5303eb5576cf7e4522164dcff2390195d75e59b7c7`.
 
 ## Exact next work
 
-1. Build `FINGRAPH_IMPLEMENTATION_RETURN.zip` with the packet’s required Markdown reports.
-2. Verify the ZIP manifest, absence of credentials/model binaries, pushed commit, and preserved unrelated worktree change.
+1. No required implementation work remains. Final handoff is the return ZIP and pushed branch.
+2. Preserve the unrelated pre-existing `scripts/smoke-test.sh` mode-only worktree change.
 
 ## Safety
 
