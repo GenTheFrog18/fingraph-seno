@@ -40,4 +40,46 @@ export type PublicTrustSummary = {
   data_scope: string;
 };
 export type MerchantDashboard = { merchant: { name: string; owner_name: string }; demo_mode: boolean; today: { payment_count: number; transaction_value: number; verified_count: number; review_count: number; high_risk_count: number }; impact: ImpactDashboard; active_alerts: number; recent_payments: Payment[]; qris_status: { nmid: string; outlet: string; status: string; last_verified_at?: string | null }[]; security_tip: string };
+export type NetworkCaseSummary = {
+  id: string;
+  case_type: string;
+  status: "suspected" | "under_review" | "dismissed";
+  risk_score: number;
+  created_at: string;
+  updated_at: string;
+  participants: { merchants?: string[]; acquirers?: string[]; providers?: string[] };
+  payer_link_count: number;
+};
+export type NetworkCaseObservation = {
+  id: string;
+  source_provider_id: string;
+  source_event_id: string;
+  source_payment_id: string;
+  occurred_at: string;
+  received_at: string;
+  amount_idr: number;
+  merchant_ref: string;
+  acquirer_id: string;
+  issuer_id: string;
+  payer_token: null;
+  payer_link_available: boolean;
+  scoring_status: string;
+  gnn_score: number | null;
+  graph_heuristic_score: number | null;
+};
+export type NetworkCaseDetail = NetworkCaseSummary & {
+  score_semantics: string;
+  model_provenance: Record<string, unknown>;
+  evidence: Record<string, unknown>;
+  observations: NetworkCaseObservation[];
+  reviewer: string | null;
+  reviewer_decision: string | null;
+  decision_reason: string | null;
+};
+export type NetworkCaseGraph = {
+  case_id: string;
+  nodes: { id: string; label: string; provider: string; [key: string]: unknown }[];
+  edges: { id: string; source: string; target: string; label: string }[];
+  privacy: string;
+};
 export type PageResponse<T> = { items: T[]; total: number; limit: number; page_size: number; offset: number; page: number; total_pages: number };

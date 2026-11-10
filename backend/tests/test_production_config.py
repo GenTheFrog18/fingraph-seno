@@ -10,6 +10,7 @@ def production_values(**overrides):
         "ENABLE_DEMO_ENDPOINTS": False, "PUBLIC_REGISTRATION_ENABLED": False,
         "AUTO_SEED": False, "JWT_SECRET_KEY": "a" * 64,
         "POSTGRES_PASSWORD": "b" * 64, "PAYER_PSEUDONYM_KEY": "c" * 64,
+        "PSP_EVENT_KEYS": "psp_a=" + "d" * 64 + ";psp_b=" + "e" * 64 + ";psp_c=" + "f" * 64,
         "TRUSTED_HOSTS": "qris.example.com", "BACKEND_CORS_ORIGINS": "https://qris.example.com",
     }
     values.update(overrides)

@@ -23,6 +23,7 @@ import {
   QrCode,
   ReceiptText,
   Settings,
+  ShieldAlert,
   ShoppingBag,
   Store,
   SunMoon,
@@ -75,6 +76,7 @@ const analystPrimary: NavItem[] = [
   { label: "Investigasi", href: "/dashboard/payments", icon: ClipboardList },
   { label: "Merchant", href: "/dashboard/merchants", icon: Store },
   { label: "Graph", href: "/dashboard/graph", icon: Network },
+  { label: "Kasus jaringan", href: "/dashboard/cases", icon: ShieldAlert },
   { label: "Lintas Wilayah", href: "/dashboard/cross-border", icon: Globe2 },
   { label: "Model", href: "/dashboard/ml", icon: BrainCircuit },
   {

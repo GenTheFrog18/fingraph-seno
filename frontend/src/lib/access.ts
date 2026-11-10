@@ -5,6 +5,7 @@ export type AppRole = "merchant" | "analyst" | "admin";
 const analystRoutes = [
   "/dashboard/merchants",
   "/dashboard/graph",
+  "/dashboard/cases",
   "/dashboard/cross-border",
   "/dashboard/ml",
   "/dashboard/adaptive",

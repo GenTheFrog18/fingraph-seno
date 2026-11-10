@@ -143,4 +143,4 @@ def test_cross_border_route_semantics_do_not_equate_geography_with_fraud():
 
 
 def test_health_expected_migration_is_single_head():
-    assert expected_migration_head() == "20260723_0006"
+    assert expected_migration_head() == "20261110_0007"

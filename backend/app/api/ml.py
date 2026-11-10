@@ -178,8 +178,12 @@ def retrain_qris_adaptive(
 @router.get("/graphsage/status")
 def graphsage_status(current_user: User = Depends(get_current_user)):
     artifacts = [item for item in list_model_artifacts() if item.get("dataset_name") == "elliptic"]
+    qris_artifacts = [item for item in list_model_artifacts() if item.get("dataset_name") == "qris_graph"]
     return {
-        "prototype": True, "model_available": bool(artifacts),
+        "prototype": True, "model_available": bool(qris_artifacts or artifacts),
+        "qris_model_available": bool(qris_artifacts),
+        "qris_active_model": qris_artifacts[0] if qris_artifacts else None,
+        "qris_artifacts": qris_artifacts[:5],
         "active_model": artifacts[0] if artifacts else None,
-        "fallback": "graph_heuristic", "note": "GraphSAGE tidak dipakai untuk inference jika artifact belum tersedia.",
+        "fallback": "graph_heuristic", "note": "QRIS GraphSAGE dipakai untuk observation inference jika artifact qris_graph tersedia; selain itu graph heuristic menjadi fallback.",
     }

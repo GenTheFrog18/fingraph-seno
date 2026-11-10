@@ -17,6 +17,7 @@ from app.models.qris import (
     QRISProfile,
     Settlement,
 )
+from app.models.qris_intelligence import CaseObservation, NetworkCase, QrisObservation
 
 __all__ = [
     "User",
@@ -36,4 +37,7 @@ __all__ = [
     "Settlement",
     "FederatedNode",
     "FederatedRound",
+    "QrisObservation",
+    "NetworkCase",
+    "CaseObservation",
 ]

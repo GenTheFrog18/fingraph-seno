@@ -83,6 +83,30 @@ def verify_pjp_signature(payload: dict[str, Any], signature: str) -> bool:
     return hmac.compare_digest(expected, signature.removeprefix("sha256="))
 
 
+def _psp_event_mac(provider_id: str, send_timestamp: int, raw_body: bytes) -> str | None:
+    secret = settings.psp_event_keys.get(provider_id)
+    if not secret:
+        return None
+    message = str(send_timestamp).encode("ascii") + b"." + raw_body
+    return hmac.new(secret.encode("utf-8"), message, hashlib.sha256).hexdigest()
+
+
+def sign_psp_event(provider_id: str, send_timestamp: int, raw_body: bytes) -> str:
+    signature = _psp_event_mac(provider_id, send_timestamp, raw_body)
+    if signature is None:
+        raise RuntimeError("PSP event provider key belum dikonfigurasi")
+    return f"sha256={signature}"
+
+
+def verify_psp_event_signature(provider_id: str, send_timestamp: int, raw_body: bytes, signature: str) -> bool:
+    if abs(int(datetime.now(timezone.utc).timestamp()) - send_timestamp) > settings.PSP_EVENT_SIGNATURE_TOLERANCE_SECONDS:
+        return False
+    expected = _psp_event_mac(provider_id, send_timestamp, raw_body)
+    if expected is None:
+        return False
+    return hmac.compare_digest(expected, signature.removeprefix("sha256="))
+
+
 def pseudonymize_payer(raw_identifier: str) -> str:
     key = settings.PAYER_PSEUDONYM_KEY or settings.PJP_SIMULATOR_SECRET
     if not key:

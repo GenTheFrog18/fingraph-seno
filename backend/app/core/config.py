@@ -45,6 +45,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     PJP_SIMULATOR_SECRET: str = ""
     PJP_SIMULATOR_NAME: str = "TrustPay Sandbox"
+    PSP_EVENT_KEYS: str = "psp_a=demo-psp-a-key;psp_b=demo-psp-b-key;psp_c=demo-psp-c-key"
+    PSP_EVENT_SIGNATURE_TOLERANCE_SECONDS: int = 300
     QRIS_WEBHOOK_TOLERANCE_SECONDS: int = 300
     QRIS_DEFAULT_CURRENCY: str = "IDR"
     QRIS_DEMO_MODE: bool = True
@@ -60,6 +62,8 @@ class Settings(BaseSettings):
     MAX_PAGE_SIZE: int = 100
     ML_ARTIFACT_DIR: str = str(Path(__file__).resolve().parents[1] / "ml" / "artifacts")
     ML_ARTIFACT_SIGNING_KEY: str = "demo-artifact-signing-key"
+    QRIS_OBSERVATION_WINDOW_SECONDS: int = 86400
+    QRIS_GNN_MAX_NODES: int = 2000
 
     AUTO_MIGRATE: bool = False
     AUTO_SEED: bool = False
@@ -84,6 +88,8 @@ class Settings(BaseSettings):
             self._require_secret("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
             self._require_secret("PAYER_PSEUDONYM_KEY", self.PAYER_PSEUDONYM_KEY)
             self._require_secret("ML_ARTIFACT_SIGNING_KEY", self.ML_ARTIFACT_SIGNING_KEY)
+            if not self.psp_event_keys or any(len(secret) < 32 for secret in self.psp_event_keys.values()):
+                raise ValueError("PSP_EVENT_KEYS production wajib berisi key kuat minimal 32 karakter untuk setiap provider")
             if "*" in self.cors_origins or not self.trusted_hosts or "*" in self.trusted_hosts:
                 raise ValueError("Production membutuhkan CORS dan TRUSTED_HOSTS eksplisit tanpa wildcard")
             if self.NEO4J_REQUIRED:
@@ -123,6 +129,15 @@ class Settings(BaseSettings):
     @property
     def database_host(self) -> str | None:
         return urlparse(self.database_url.replace("postgresql+psycopg2", "postgresql")).hostname
+
+    @property
+    def psp_event_keys(self) -> dict[str, str]:
+        keys: dict[str, str] = {}
+        for item in self.PSP_EVENT_KEYS.split(";"):
+            provider, separator, secret = item.partition("=")
+            if separator and provider.strip() and secret.strip():
+                keys[provider.strip()] = secret.strip()
+        return keys
 
 
 settings = Settings()

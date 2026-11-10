@@ -25,6 +25,7 @@ from app.api.reports import router as reports_router
 from app.api.health import router as health_router
 from app.api.admin import router as admin_router
 from app.api.public import router as public_router
+from app.api.psp_intelligence import router as psp_intelligence_router
 
 
 logging.basicConfig(
@@ -113,6 +114,7 @@ app.include_router(reports_router, prefix="/api/v1")
 app.include_router(health_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(public_router, prefix="/api/v1")
+app.include_router(psp_intelligence_router, prefix="/api/v1")
 
 logger.info(
     "startup app_env=%s demo_mode=%s docs=%s database_host=%s neo4j_required=%s artifact_dir=%s",

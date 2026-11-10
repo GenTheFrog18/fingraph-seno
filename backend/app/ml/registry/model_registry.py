@@ -1,3 +1,4 @@
+import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -41,6 +42,7 @@ def save_model_artifact(
 
     joblib.dump(artifact, model_path)
     sign_artifact(model_path)
+    artifact_hash = hashlib.sha256(model_path.read_bytes()).hexdigest()
 
     metrics_payload = {
         **metrics,
@@ -49,6 +51,7 @@ def save_model_artifact(
         "version": version,
         "model_path": str(model_path),
         "created_at": artifact["created_at"],
+        "artifact_hash": artifact_hash,
     }
 
     with open(metrics_path, "w", encoding="utf-8") as file:
@@ -117,6 +120,8 @@ def load_latest_model_by_dataset(dataset_name: str) -> dict[str, Any] | None:
             continue
 
         verify_artifact(model_file)
-        return joblib.load(model_file)
+        artifact = joblib.load(model_file)
+        artifact["artifact_hash"] = hashlib.sha256(model_file.read_bytes()).hexdigest()
+        return artifact
 
     return None
