@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import cytoscape, { Core, ElementDefinition } from "cytoscape";
+import coseBilkent from "cytoscape-cose-bilkent";
 import { Network, RefreshCw, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
@@ -9,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { useApi } from "@/hooks/use-api";
 import type { NetworkCaseDetail, NetworkCaseGraph, NetworkCaseSummary } from "@/lib/types";
+
+cytoscape.use(coseBilkent);
 
 type CaseListResponse = { items: NetworkCaseSummary[] };
 
@@ -141,8 +145,9 @@ function CaseDetail({ caseItem, onUpdate }: { caseItem: NetworkCaseDetail; onUpd
       <div className="rounded-lg border border-info/20 bg-info/5 p-4 text-sm leading-6 text-muted-foreground">
         <div className="flex items-center gap-2 font-medium text-foreground"><Network className="h-4 w-4" /> Evidence graph</div>
         <p className="mt-1">Graph investigation menyertakan payment-to-merchant relationships yang sudah namespaced provider. Payer token sengaja dihilangkan dari respons UI.</p>
-        <p className="mt-2 text-xs">{graph.loading ? "Memuat graph…" : graph.data ? `${graph.data.nodes.length} nodes · ${graph.data.edges.length} edges · ${graph.data.privacy}` : "Graph belum tersedia"}</p>
+        <p className="mt-2 text-xs">{graph.loading ? "Memuat graph…" : graph.data ? `${graph.data.nodes.length} nodes · ${graph.data.edges.length} edges · ${graph.data.privacy}` : graph.error ? graph.error : "Graph belum tersedia"}</p>
       </div>
+      {graph.data && <CaseGraph graph={graph.data} />}
       <div>
         <h3 className="font-medium">Observasi yang mendukung</h3>
         <div className="mt-3 overflow-x-auto rounded-lg border border-border">
@@ -159,6 +164,54 @@ function CaseDetail({ caseItem, onUpdate }: { caseItem: NetworkCaseDetail; onUpd
         <span className="rounded-full border border-border px-2.5 py-1">Model artifact: {String(caseItem.model_provenance?.gnn && typeof caseItem.model_provenance.gnn === "object" ? "tercatat" : "fallback")}</span>
       </div>
     </section>
+  );
+}
+
+function CaseGraph({ graph }: { graph: NetworkCaseGraph }) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const cyRef = useRef<Core | null>(null);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    cyRef.current?.destroy();
+    if (!graph.nodes.length) return;
+    const elements: ElementDefinition[] = [
+      ...graph.nodes.map((node) => ({
+        data: { ...node, id: node.id, title: node.reason ?? node.label },
+        classes: node.entity_type ?? "entity",
+      })),
+      ...graph.edges.map((edge) => ({ data: edge })),
+    ];
+    const cy = cytoscape({
+      container: containerRef.current,
+      elements,
+      minZoom: 0.35,
+      maxZoom: 2.5,
+      style: [
+        { selector: "node", style: { label: "data(label)", "font-size": 9, "text-wrap": "wrap", "text-max-width": 90, "background-color": "#2563eb", color: "#111827", width: 30, height: 30, "border-width": 2, "border-color": "#ffffff" } },
+        { selector: "node.merchant", style: { "background-color": "#15803d", shape: "rectangle" } },
+        { selector: "node.payer_link", style: { "background-color": "#7c3aed", shape: "round-rectangle" } },
+        { selector: "node.payment", style: { "background-color": "#2563eb", shape: "ellipse" } },
+        { selector: "edge", style: { label: "data(label)", "font-size": 8, "line-color": "#94a3b8", "target-arrow-color": "#94a3b8", "target-arrow-shape": "triangle", "curve-style": "bezier", width: 1.5 } },
+        { selector: "node:selected", style: { "border-color": "#f59e0b", "border-width": 4 } },
+      ] as cytoscape.StylesheetStyle[],
+      layout: { name: "cose-bilkent", animate: false, fit: true, padding: 36 } as cytoscape.LayoutOptions,
+    });
+    cyRef.current = cy;
+    return () => {
+      cy.destroy();
+      cyRef.current = null;
+    };
+  }, [graph]);
+
+  return (
+    <div className="rounded-lg border border-border bg-surface-subtle p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span>Payment → merchant dan payment → payer-link</span>
+        <span>{graph.truncated ? `Menampilkan ${graph.returned_observations} dari ${graph.total_observations} observasi` : "Seluruh observasi kasus ditampilkan"}</span>
+      </div>
+      <div ref={containerRef} className="h-[420px] w-full rounded-md bg-surface" aria-label="Graph evidence kasus" />
+    </div>
   );
 }
 

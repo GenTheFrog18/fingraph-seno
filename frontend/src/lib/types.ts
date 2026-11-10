@@ -78,8 +78,11 @@ export type NetworkCaseDetail = NetworkCaseSummary & {
 };
 export type NetworkCaseGraph = {
   case_id: string;
-  nodes: { id: string; label: string; provider: string; [key: string]: unknown }[];
-  edges: { id: string; source: string; target: string; label: string }[];
+  nodes: { id: string; label: string; entity_type?: string; provider?: string; reason?: string; [key: string]: unknown }[];
+  edges: { id: string; source: string; target: string; label: string; reason?: string }[];
   privacy: string;
+  total_observations?: number;
+  returned_observations?: number;
+  truncated?: boolean;
 };
 export type PageResponse<T> = { items: T[]; total: number; limit: number; page_size: number; offset: number; page: number; total_pages: number };

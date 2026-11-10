@@ -29,6 +29,25 @@ def _signature(provider: str, timestamp: int, body: bytes, keys: dict[str, str])
     return f"sha256={digest}"
 
 
+def _sanitize_response(provider: str, status_code: int, response: dict[str, object]) -> dict[str, object]:
+    score = response.get("score") if isinstance(response.get("score"), dict) else {}
+    gnn = score.get("gnn") if isinstance(score.get("gnn"), dict) else {}
+    heuristic = score.get("graph_heuristic") if isinstance(score.get("graph_heuristic"), dict) else {}
+    return {
+        "provider": provider,
+        "status_code": status_code,
+        "status": response.get("status"),
+        "scoring_status": response.get("scoring_status"),
+        "observation_id": response.get("observation_id"),
+        "case_id": response.get("case_id"),
+        "gnn_status": gnn.get("status"),
+        "gnn_model_version": gnn.get("model_version"),
+        "gnn_artifact_hash": gnn.get("artifact_hash"),
+        "gnn_fallback_reason": gnn.get("fallback_reason"),
+        "graph_heuristic_score": heuristic.get("score"),
+    }
+
+
 def _post(base_url: str, provider: str, payload: dict[str, object], keys: dict[str, str]) -> dict[str, object]:
     body = json.dumps(payload, separators=(",", ":"), sort_keys=True).encode()
     timestamp = int(time.time())
@@ -45,12 +64,18 @@ def _post(base_url: str, provider: str, payload: dict[str, object], keys: dict[s
     )
     try:
         with urllib.request.urlopen(request, timeout=15) as response:
-            return {"provider": provider, "status_code": response.status, "response": json.loads(response.read())}
+            return _sanitize_response(provider, response.status, json.loads(response.read()))
     except urllib.error.HTTPError as error:
-        return {"provider": provider, "status_code": error.code, "response": json.loads(error.read())}
+        try:
+            response = json.loads(error.read())
+        except (TypeError, ValueError, json.JSONDecodeError):
+            response = {"detail": "non_json_error"}
+        result = _sanitize_response(provider, error.code, response if isinstance(response, dict) else {})
+        result["error"] = response.get("detail", "request_failed") if isinstance(response, dict) else "request_failed"
+        return result
 
 
-def _events() -> list[tuple[str, dict[str, object]]]:
+def _events(run_id: str) -> list[tuple[str, dict[str, object]]]:
     occurred_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     common = {
         "schema_version": "fingraph.qris.observation.v1",
@@ -74,8 +99,8 @@ def _events() -> list[tuple[str, dict[str, object]]]:
     for index, (provider, merchant, payer) in enumerate(rows, start=1):
         payload = {
             **common,
-            "source_event_id": f"demo-event-{index:03d}",
-            "source_payment_id": f"demo-payment-{index:03d}",
+            "source_event_id": f"{run_id}-event-{index:03d}",
+            "source_payment_id": f"{run_id}-payment-{index:03d}",
             "amount_idr": 125000 + index * 1000,
             "merchant_ref": merchant,
             "acquirer_id": provider,
@@ -90,18 +115,28 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--base-url", default=os.getenv("FINGRAPH_BASE_URL", "http://127.0.0.1:8000"))
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--run-id", default=f"demo-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}")
     args = parser.parse_args()
 
     keys = _keys()
-    missing = sorted({provider for provider, _ in _events()} - keys.keys())
+    events = _events(args.run_id)
+    missing = sorted({provider for provider, _ in events} - keys.keys())
     if missing:
         raise SystemExit(f"Missing PSP_EVENT_KEYS for: {', '.join(missing)}")
-    results = [_post(args.base_url, provider, payload, keys) for provider, payload in _events()]
+    started = time.monotonic()
+    results = [_post(args.base_url, provider, payload, keys) for provider, payload in events]
+    case_ids = sorted({item["case_id"] for item in results if item.get("case_id")})
     summary = {
         "mode": "post_event_only",
+        "run_id": args.run_id,
         "events_sent": len(results),
-        "accepted": sum(item["status_code"] == 202 for item in results),
-        "case_ids": sorted({item.get("response", {}).get("case_id") for item in results if item.get("response", {}).get("case_id")}),
+        "accepted": sum(item.get("status") == "accepted" for item in results),
+        "idempotent": sum(item.get("status") == "already_seen" for item in results),
+        "errors": sum(int(item.get("status_code", 500)) >= 400 for item in results),
+        "complete_gnn_scores": sum(item.get("gnn_status") == "complete" for item in results),
+        "fallback_scores": sum(item.get("gnn_status") == "fallback" for item in results),
+        "case_ids": case_ids,
+        "elapsed_seconds": round(time.monotonic() - started, 3),
         "results": results,
     }
     rendered = json.dumps(summary, indent=2, sort_keys=True)

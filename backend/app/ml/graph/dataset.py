@@ -6,7 +6,7 @@ import hmac
 import math
 import random
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -87,7 +87,8 @@ def _timestamp(value: Any) -> datetime | None:
         return None
     text = str(value).strip().replace("Z", "+00:00")
     try:
-        return datetime.fromisoformat(text).replace(tzinfo=None)
+        parsed = datetime.fromisoformat(text)
+        return (parsed.astimezone(timezone.utc) if parsed.tzinfo else parsed).replace(tzinfo=None)
     except ValueError:
         for fmt in ("%Y-%m-%d %H:%M:%S", "%Y/%m/%d %H:%M:%S", "%d/%m/%Y %H:%M:%S"):
             try:

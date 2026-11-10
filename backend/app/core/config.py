@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     PJP_SIMULATOR_NAME: str = "TrustPay Sandbox"
     PSP_EVENT_KEYS: str = "psp_a=demo-psp-a-key;psp_b=demo-psp-b-key;psp_c=demo-psp-c-key"
     PSP_EVENT_SIGNATURE_TOLERANCE_SECONDS: int = 300
+    CENTRAL_INVESTIGATOR_EMAILS: str = "analyst@fingraph.id;admin@fingraph.id"
     QRIS_WEBHOOK_TOLERANCE_SECONDS: int = 300
     QRIS_DEFAULT_CURRENCY: str = "IDR"
     QRIS_DEMO_MODE: bool = True
@@ -64,6 +65,7 @@ class Settings(BaseSettings):
     ML_ARTIFACT_SIGNING_KEY: str = "demo-artifact-signing-key"
     QRIS_OBSERVATION_WINDOW_SECONDS: int = 86400
     QRIS_GNN_MAX_NODES: int = 2000
+    QRIS_CASE_GRAPH_MAX_OBSERVATIONS: int = 100
 
     AUTO_MIGRATE: bool = False
     AUTO_SEED: bool = False
@@ -90,6 +92,8 @@ class Settings(BaseSettings):
             self._require_secret("ML_ARTIFACT_SIGNING_KEY", self.ML_ARTIFACT_SIGNING_KEY)
             if not self.psp_event_keys or any(len(secret) < 32 for secret in self.psp_event_keys.values()):
                 raise ValueError("PSP_EVENT_KEYS production wajib berisi key kuat minimal 32 karakter untuk setiap provider")
+            if not self.central_investigator_emails:
+                raise ValueError("CENTRAL_INVESTIGATOR_EMAILS production wajib berisi akun investigator terprovisi")
             if "*" in self.cors_origins or not self.trusted_hosts or "*" in self.trusted_hosts:
                 raise ValueError("Production membutuhkan CORS dan TRUSTED_HOSTS eksplisit tanpa wildcard")
             if self.NEO4J_REQUIRED:
@@ -138,6 +142,10 @@ class Settings(BaseSettings):
             if separator and provider.strip() and secret.strip():
                 keys[provider.strip()] = secret.strip()
         return keys
+
+    @property
+    def central_investigator_emails(self) -> set[str]:
+        return {email.strip().lower() for email in self.CENTRAL_INVESTIGATOR_EMAILS.split(";") if email.strip()}
 
 
 settings = Settings()

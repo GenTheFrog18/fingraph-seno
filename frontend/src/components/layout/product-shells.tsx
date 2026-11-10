@@ -7,14 +7,11 @@ import {
   AlertTriangle,
   BarChart3,
   Bell,
-  BrainCircuit,
-  Building2,
   ChevronDown,
   CircleHelp,
   ClipboardList,
   CreditCard,
   FlaskConical,
-  Globe2,
   History,
   Home,
   LogOut,
@@ -73,18 +70,10 @@ const merchantNav: NavItem[] = [
 ];
 const analystPrimary: NavItem[] = [
   { label: "Ringkasan", href: "/dashboard", icon: Home, exact: true },
-  { label: "Investigasi", href: "/dashboard/payments", icon: ClipboardList },
-  { label: "Merchant", href: "/dashboard/merchants", icon: Store },
-  { label: "Graph", href: "/dashboard/graph", icon: Network },
-  { label: "Kasus jaringan", href: "/dashboard/cases", icon: ShieldAlert },
-  { label: "Lintas Wilayah", href: "/dashboard/cross-border", icon: Globe2 },
-  { label: "Model", href: "/dashboard/ml", icon: BrainCircuit },
-  {
-    label: "Federated Learning",
-    href: "/dashboard/federated",
-    icon: Building2,
-  },
-  { label: "Audit", href: "/dashboard/audit-logs", icon: History },
+  { label: "Kasus lintas-PSP", href: "/dashboard/cases", icon: ShieldAlert },
+  { label: "Investigasi transaksi", href: "/dashboard/payments", icon: ClipboardList },
+  { label: "Graph evidence", href: "/dashboard/graph", icon: Network },
+  { label: "Audit keputusan", href: "/dashboard/audit-logs", icon: History },
 ];
 
 function activePath(pathname: string, item: NavItem) {

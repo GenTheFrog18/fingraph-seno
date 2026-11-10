@@ -26,48 +26,48 @@ const problems = [
   {
     icon: FileWarning,
     number: "01",
-    title: "Bukti pembayaran bisa dipalsukan.",
-    body: "Screenshot bukan konfirmasi dana. FinGraph membantu kasir kembali ke data transaksi yang benar-benar diterima.",
+    title: "Sinyal tersebar di banyak PSP.",
+    body: "Event provider yang terpisah tidak cukup untuk melihat hubungan merchant dan payer link yang berulang.",
   },
   {
     icon: ReceiptText,
     number: "02",
-    title: "Dana masuk, tetapi nominalnya kurang.",
-    body: "Nilai pembayaran dibandingkan dengan pesanan agar selisih tidak terlewat saat antrean sedang ramai.",
+    title: "Identitas tidak boleh digabung sembarangan.",
+    body: "Namespace provider dan issuer menjaga merchant serta payer link tetap dapat ditelusuri tanpa membuka token mentah.",
   },
   {
     icon: RotateCcw,
     number: "03",
-    title: "QRIS dapat mengarah ke outlet yang salah.",
-    body: "Profil merchant, outlet, dan sidik QR dibandingkan sebelum pesanan diserahkan.",
+    title: "Prioritas perlu evidence yang dapat diaudit.",
+    body: "GNN, heuristic topology, alasan edge, dan riwayat keputusan disajikan bersama dalam satu kasus.",
   },
 ];
 
 const features = [
-  ["Verifikasi pembayaran", "Keputusan dan tindakan ditampilkan sebelum rincian teknis."],
-  ["Peringatan yang jelas", "Alasan singkat untuk memproses, memeriksa, atau menahan pesanan."],
-  ["Hubungan transaksi", "Tim investigasi dapat menelusuri pola lintas akun dan outlet."],
-  ["Laporan usaha", "Ringkasan pembayaran, risiko, dan action log dalam satu alur."],
+  ["Ingestion signed", "HMAC provider, freshness window, dan idempotensi mencegah event palsu atau ganda."],
+  ["Case evidence", "Observasi, edge reason, dan provenance model mengikuti kasus lintas PSP."],
+  ["Graph investigation", "Cytoscape memperlihatkan payment, merchant namespaced, dan payer alias case-local."],
+  ["Audit keputusan", "Status review, dismissal, dan automatic reopen meninggalkan riwayat yang dapat ditinjau."],
 ];
 
 const steps = [
   {
     number: "01",
     icon: ReceiptText,
-    title: "Pembayaran diterima",
-    body: "Referensi, nominal, dan pesanan masuk ke ruang pemeriksaan.",
+    title: "Event PSP diterima",
+    body: "Event QRIS ditandatangani oleh PSP dan dicatat sebagai observation yang idempotent.",
   },
   {
     number: "02",
     icon: ScanSearch,
-    title: "FinGraph menganalisis",
-    body: "Konfirmasi, profil QRIS, dan sinyal risiko diperiksa bersama.",
+    title: "Graph menghubungkan sinyal",
+    body: "Payer link berscope issuer, merchant namespaced, dan riwayat terbaru diproses bersama GNN.",
   },
   {
     number: "03",
     icon: CircleCheckBig,
-    title: "Merchant bertindak",
-    body: "Proses, periksa, tahan, atau laporkan dengan alasan yang jelas.",
+    title: "Investigator meninjau",
+    body: "Kasus dibuka dengan provenance model, alasan edge, audit status, dan alias payer case-local.",
   },
 ];
 
@@ -79,16 +79,17 @@ export default function LandingPage() {
       <section className="bg-black">
         <Reveal className="mx-auto max-w-[1440px] px-4 pb-12 pt-20 sm:px-6 sm:pb-16 sm:pt-28 lg:px-10 lg:pt-32">
           <p className="text-xs font-normal tracking-[.08em] text-zinc-400">
-            KEAMANAN PEMBAYARAN UNTUK UMKM
+            INTELIJEN FRAUD QRIS LINTAS PSP
           </p>
           <div className="mt-7 grid gap-8 lg:grid-cols-[1.25fr_.55fr] lg:items-end">
             <h1 className="font-display max-w-[1040px] text-[46px] font-light leading-[.98] tracking-[-.035em] sm:text-[66px] lg:text-[88px]">
-              Pastikan pembayaran masuk sebelum pesanan diserahkan.
+              Hubungkan sinyal fraud QRIS lintas PSP sebelum jaringan makin luas.
             </h1>
             <div className="pb-2">
               <p className="text-base font-normal leading-7 text-zinc-300 lg:text-lg">
-                Cocokkan konfirmasi dan nominal QRIS, lalu ambil tindakan yang
-                tepat tanpa menebak-nebak.
+                FinGraph memberi investigator sentral ruang kerja untuk menerima
+                event terautentikasi, menggabungkan graph evidence, dan meninjau
+                prioritas kasus berbasis GNN.
               </p>
               <Button
                 asChild
@@ -96,13 +97,13 @@ export default function LandingPage() {
                 className="mt-7 h-12 border-2 border-white bg-white px-6 text-black hover:bg-zinc-200"
               >
                 <Link href="/login">
-                  Coba FinGraph
+                  Buka ruang investigasi
                   <ArrowRight className="ml-2" />
                 </Link>
               </Button>
               <p className="mt-5 text-xs leading-5 text-zinc-400">
-                Mode Demo memakai simulator. Tidak terhubung ke Bank Indonesia,
-                bank, atau PJP nyata.
+                Mode Demo memakai event sintetis enam transaksi dari tiga PSP.
+                Tidak terhubung ke Bank Indonesia, bank, atau PJP nyata.
               </p>
             </div>
           </div>
@@ -115,7 +116,7 @@ export default function LandingPage() {
           <Reveal className="relative h-full w-full" delay={120}>
             <Image
               src="/fingraph-merchant-hero.png"
-              alt="Pemilik usaha memeriksa pembayaran di meja kasir sebelum menyerahkan pesanan"
+              alt="Investigator memeriksa graph evidence QRIS lintas PSP"
               fill
               priority
               sizes="100vw"
@@ -142,12 +143,12 @@ export default function LandingPage() {
 
       <PublicTrustMetrics />
 
-      <section id="untuk-umkm" className="bg-black py-20 sm:py-28">
+      <section id="untuk-investigator" className="bg-black py-20 sm:py-28">
         <Reveal className="mx-auto max-w-[1240px] px-4 sm:px-6">
           <div className="max-w-4xl">
-            <p className="text-xs tracking-[.08em] text-zinc-500">MASALAH DI KASIR</p>
+            <p className="text-xs tracking-[.08em] text-zinc-500">MASALAH INVESTIGASI LINTAS PSP</p>
             <h2 className="font-display mt-6 text-[42px] font-light leading-[1.08] tracking-[-.03em] sm:text-[62px]">
-              Bukti terlihat benar. Dana belum tentu masuk.
+              Sinyal fraud tersebar. Jaringan tidak boleh ikut tersembunyi.
             </h2>
           </div>
           <div className="mt-16 divide-y divide-zinc-800 border-y border-zinc-800">
@@ -198,10 +199,10 @@ export default function LandingPage() {
           <PaymentWorkspacePreview />
           <div className="lg:pt-5">
             <span className="inline-flex rounded-full bg-[#c1fbd4] px-3 py-1.5 text-xs tracking-[.06em]">
-              RUANG KERJA MERCHANT
+              RUANG KERJA INVESTIGATOR
             </span>
             <h2 className="font-display mt-6 text-[42px] font-light leading-[1.08] tracking-[-.03em] sm:text-[55px]">
-              Informasi penting muncul pada saat yang tepat.
+              Dari event signed menjadi kasus yang dapat ditindaklanjuti.
             </h2>
             <div className="mt-10 divide-y divide-zinc-200 border-y border-zinc-200">
               {features.map(([title, body]) => (
@@ -240,8 +241,8 @@ export default function LandingPage() {
             <div>
               <h2 className="text-xl font-medium">Privasi ikut dirancang dari awal.</h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-zinc-700">
-                Identitas pembayar dipseudonimkan. Prototype Federated Learning
-                tidak membagikan baris transaksi mentah antar-node.
+                Payer token tidak pernah dikirim ke UI. Investigator melihat alias
+                HMAC yang hanya valid dalam konteks kasusnya.
               </p>
             </div>
           </div>
@@ -258,11 +259,11 @@ export default function LandingPage() {
             <ShieldCheck className="h-8 w-8" strokeWidth={1.5} />
           </span>
           <h2 className="font-display mt-8 text-[46px] font-light leading-[1.05] tracking-[-.03em] sm:text-[70px]">
-            Pembayaran jelas. Usaha lebih tenang.
+            Sinyal terhubung. Investigasi lebih tajam.
           </h2>
           <p className="mt-6 max-w-2xl text-base leading-7 text-zinc-400">
-            Satu ruang kerja untuk memeriksa pembayaran, memahami risiko, dan
-            menentukan tindakan sebelum pesanan diserahkan.
+            Satu ruang kerja untuk menghubungkan event QRIS lintas PSP,
+            memahami prioritas model, dan mendokumentasikan keputusan.
           </p>
           <Button
             asChild
@@ -287,13 +288,13 @@ export default function LandingPage() {
           <div>
             <AppLogo inverted />
             <p className="mt-5 max-w-md text-sm leading-6 text-zinc-500">
-              FinGraph membantu UMKM memeriksa pembayaran, memahami risiko,
-              dan mengambil tindakan sebelum pesanan diserahkan.
+              FinGraph membantu tim institusional menghubungkan sinyal fraud
+              QRIS lintas PSP dengan evidence dan audit yang jelas.
             </p>
           </div>
           <div className="flex flex-wrap gap-6 text-sm text-zinc-400">
             <a href="#cara-kerja">Cara kerja</a>
-            <a href="#untuk-umkm">Untuk UMKM</a>
+            <a href="#untuk-investigator">Untuk investigator</a>
             <a href="#fitur">Fitur</a>
             <a href="#harga">Harga</a>
             <Link href="/login">Masuk</Link>
@@ -314,7 +315,7 @@ function PublicHeader() {
         <AppLogo inverted />
         <nav className="hidden items-center gap-8 text-[15px] text-zinc-300 md:flex" aria-label="Navigasi utama">
           <a href="#cara-kerja" className="hover:text-white">Cara kerja</a>
-          <a href="#untuk-umkm" className="hover:text-white">Untuk UMKM</a>
+          <a href="#untuk-investigator" className="hover:text-white">Untuk investigator</a>
           <a href="#fitur" className="hover:text-white">Fitur</a>
           <a href="#harga" className="hover:text-white">Harga</a>
         </nav>
@@ -330,7 +331,7 @@ function PublicHeader() {
           <div className="absolute right-0 top-14 w-64 rounded-xl border border-zinc-800 bg-[#0a0a0a] p-2 shadow-2xl">
             {[
               ["#cara-kerja", "Cara kerja"],
-              ["#untuk-umkm", "Untuk UMKM"],
+              ["#untuk-investigator", "Untuk investigator"],
               ["#fitur", "Fitur"],
               ["#harga", "Harga"],
             ].map(([href, label]) => (

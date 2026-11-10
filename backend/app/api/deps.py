@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.user import User
 from app.models.qris import MerchantProfile
@@ -74,6 +75,17 @@ def require_roles(*roles: str):
         return current_user
 
     return dependency
+
+
+def require_central_investigator(
+    current_user: User = Depends(require_roles("analyst", "admin")),
+) -> User:
+    if current_user.email.strip().lower() not in settings.central_investigator_emails:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akun belum diprovisi sebagai investigator sentral",
+        )
+    return current_user
 
 
 def get_current_merchant(

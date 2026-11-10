@@ -65,9 +65,9 @@ test("landing memakai endpoint agregat publik dan aset logo resmi", async () => 
   assert.ok(landing.includes("<PublicTrustMetrics />"));
   assert.ok(metrics.includes('"/public/trust-summary"'));
   assert.doesNotMatch(metrics, /registered_users:\s*\d/);
-  assert.ok(logo.includes('"/logo-mark.png"'));
+  assert.ok(logo.includes('"/globe.svg"'));
   assert.equal((landing.match(/href="#cara-kerja"/g) ?? []).length >= 2, true);
-  assert.ok(landing.includes("Untuk UMKM"));
+  assert.ok(landing.includes("Untuk investigator"));
   assert.doesNotMatch(landing, /Masuk ke dasbor/);
   assert.ok(landing.includes("landing-fixed-theme"));
   assert.ok(landing.includes("Risiko {score}/100 · Keyakinan {confidence}%"));

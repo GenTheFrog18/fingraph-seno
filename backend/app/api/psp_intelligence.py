@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
-import time
 from datetime import datetime, timezone
 from uuid import UUID
 
@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request, s
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_current_user, require_roles
+from app.api.deps import require_central_investigator
 from app.core.config import settings
 from app.core.security import verify_psp_event_signature
 from app.db.session import get_db
@@ -18,15 +18,10 @@ from app.models.qris_intelligence import CaseObservation, NetworkCase, QrisObser
 from app.models.user import User
 from app.schemas.intelligence import CaseStatusUpdate, QrisObservationIngest
 from app.services.audit import add_audit
-from app.services.qris_intelligence import score_and_open_case, serialize_case, serialize_observation
+from app.services.qris_intelligence import score_and_open_case, serialize_case
 
 
 router = APIRouter(tags=["PSP Intelligence"])
-
-
-def _provider_user_scope(user: User) -> str | None:
-    institution = (user.institution_name or "").strip().lower()
-    return institution if institution.startswith("psp_") else None
 
 
 def _parse_timestamp(value: str) -> int:
@@ -153,31 +148,26 @@ async def ingest_psp_event(
     }
 
 
-def _case_query(db: Session, user: User):
-    provider_scope = _provider_user_scope(user)
-    if provider_scope:
-        return db.query(NetworkCase).join(CaseObservation, CaseObservation.case_id == NetworkCase.id).join(
-            QrisObservation, QrisObservation.id == CaseObservation.observation_id
-        ).filter(QrisObservation.source_provider_id == provider_scope).distinct(), provider_scope
-    return db.query(NetworkCase), None
+def _case_query(db: Session):
+    return db.query(NetworkCase)
 
 
-def _get_case(db: Session, user: User, case_id: UUID) -> tuple[NetworkCase, str | None]:
-    query, provider_scope = _case_query(db, user)
+def _get_case(db: Session, user: User, case_id: UUID) -> NetworkCase:
+    query = _case_query(db)
     case = query.filter(NetworkCase.id == case_id).first()
     if not case:
         raise HTTPException(status_code=404, detail="Case tidak ditemukan")
-    return case, provider_scope
+    return case
 
 
 @router.get("/cases")
 def list_cases(
     status_filter: str | None = Query(default=None, alias="status"),
     limit: int = Query(default=50, ge=1, le=100),
-    current_user: User = Depends(require_roles("analyst", "admin")),
+    current_user: User = Depends(require_central_investigator),
     db: Session = Depends(get_db),
 ):
-    query, _ = _case_query(db, current_user)
+    query = _case_query(db)
     if status_filter:
         query = query.filter(NetworkCase.status == status_filter)
     cases = query.order_by(NetworkCase.updated_at.desc()).limit(limit).all()
@@ -199,44 +189,105 @@ def list_cases(
 
 
 @router.get("/cases/{case_id}")
-def get_case(case_id: UUID, current_user: User = Depends(require_roles("analyst", "admin")), db: Session = Depends(get_db)):
-    case, provider_scope = _get_case(db, current_user, case_id)
-    return serialize_case(db, case, provider_scope=provider_scope)
+def get_case(case_id: UUID, current_user: User = Depends(require_central_investigator), db: Session = Depends(get_db)):
+    case = _get_case(db, current_user, case_id)
+    return serialize_case(db, case)
 
 
 @router.get("/cases/{case_id}/evidence")
-def get_case_evidence(case_id: UUID, current_user: User = Depends(require_roles("analyst", "admin")), db: Session = Depends(get_db)):
-    case, provider_scope = _get_case(db, current_user, case_id)
-    payload = serialize_case(db, case, provider_scope=provider_scope)
+def get_case_evidence(case_id: UUID, current_user: User = Depends(require_central_investigator), db: Session = Depends(get_db)):
+    case = _get_case(db, current_user, case_id)
+    payload = serialize_case(db, case)
     return {"case_id": str(case.id), "evidence": payload["evidence"], "observations": payload["observations"], "model_provenance": payload["model_provenance"]}
 
 
 @router.get("/cases/{case_id}/graph")
-def get_case_graph(case_id: UUID, current_user: User = Depends(require_roles("analyst", "admin")), db: Session = Depends(get_db)):
-    case, provider_scope = _get_case(db, current_user, case_id)
-    payload = serialize_case(db, case, provider_scope=provider_scope)
-    nodes = []
-    edges = []
-    for observation in payload["observations"]:
-        payment_id = f"payment:{observation['id']}"
-        merchant_id = f"merchant:{observation['source_provider_id']}:{observation['merchant_ref']}"
-        nodes.extend([
-            {"id": payment_id, "label": "Payment", "provider": observation["source_provider_id"], "amount_idr": observation["amount_idr"]},
-            {"id": merchant_id, "label": "Merchant", "provider": observation["source_provider_id"], "merchant_ref": observation["merchant_ref"]},
-        ])
-        edges.append({"id": f"{payment_id}:merchant", "source": payment_id, "target": merchant_id, "label": "PAYMENT_TO_MERCHANT"})
-    unique_nodes = {node["id"]: node for node in nodes}
-    return {"case_id": str(case.id), "nodes": list(unique_nodes.values()), "edges": edges, "privacy": "payer tokens omitted from graph response"}
+def get_case_graph(case_id: UUID, current_user: User = Depends(require_central_investigator), db: Session = Depends(get_db)):
+    case = _get_case(db, current_user, case_id)
+    max_observations = max(1, settings.QRIS_CASE_GRAPH_MAX_OBSERVATIONS)
+    observation_query = (
+        db.query(QrisObservation)
+        .join(CaseObservation, CaseObservation.observation_id == QrisObservation.id)
+        .filter(CaseObservation.case_id == case.id)
+        .order_by(QrisObservation.received_at.asc(), QrisObservation.id.asc())
+    )
+    total_observations = observation_query.count()
+    observations = observation_query.limit(max_observations).all()
+
+    payer_key = settings.PAYER_PSEUDONYM_KEY.encode() or b"qris-local-key"
+    payer_aliases: dict[str, tuple[str, str]] = {}
+    for observation in observations:
+        if not observation.payer_token:
+            continue
+        qualified = f"{observation.issuer_id}|{observation.payer_token_scheme or 'unspecified'}|{observation.payer_token}"
+        digest = hmac.new(payer_key, f"{case.id}:{qualified}".encode(), hashlib.sha256).hexdigest()[:24]
+        payer_aliases.setdefault(digest, (qualified, f"Payer {chr(65 + len(payer_aliases))}"))
+
+    nodes: dict[str, dict] = {}
+    edges: list[dict] = []
+    for observation in observations:
+        payment_id = f"payment:{observation.id}"
+        merchant_id = f"merchant:{observation.source_provider_id}:{observation.merchant_ref}"
+        nodes[payment_id] = {
+            "id": payment_id,
+            "label": "Payment",
+            "entity_type": "payment",
+            "provider": observation.source_provider_id,
+            "amount_idr": observation.amount_idr,
+            "reason": "Observation accepted from an authenticated PSP event",
+        }
+        nodes[merchant_id] = {
+            "id": merchant_id,
+            "label": f"Merchant {observation.merchant_ref}",
+            "entity_type": "merchant",
+            "provider": observation.source_provider_id,
+            "merchant_ref": observation.merchant_ref,
+            "reason": "Provider-namespaced merchant reference",
+        }
+        edges.append({
+            "id": f"{payment_id}:merchant",
+            "source": payment_id,
+            "target": merchant_id,
+            "label": "payment → merchant",
+            "reason": "Same provider-namespaced merchant reference",
+        })
+        if observation.payer_token:
+            qualified = f"{observation.issuer_id}|{observation.payer_token_scheme or 'unspecified'}|{observation.payer_token}"
+            digest, alias = next((key, value[1]) for key, value in payer_aliases.items() if value[0] == qualified)
+            payer_id = f"payer:{digest}"
+            nodes[payer_id] = {
+                "id": payer_id,
+                "label": alias,
+                "entity_type": "payer_link",
+                "alias": alias,
+                "reason": "Case-local HMAC alias for an issuer- and scheme-scoped payer link",
+            }
+            edges.append({
+                "id": f"{payment_id}:payer:{digest}",
+                "source": payment_id,
+                "target": payer_id,
+                "label": "shared payer link",
+                "reason": "Same issuer- and scheme-scoped payer token within this case",
+            })
+    return {
+        "case_id": str(case.id),
+        "nodes": list(nodes.values()),
+        "edges": edges,
+        "privacy": "Payer identifiers are case-local HMAC aliases; raw payer tokens are never returned",
+        "total_observations": total_observations,
+        "returned_observations": len(observations),
+        "truncated": total_observations > len(observations),
+    }
 
 
 @router.patch("/cases/{case_id}/status")
 def update_case_status(
     case_id: UUID,
     payload: CaseStatusUpdate,
-    current_user: User = Depends(require_roles("analyst", "admin")),
+    current_user: User = Depends(require_central_investigator),
     db: Session = Depends(get_db),
 ):
-    case, _ = _get_case(db, current_user, case_id)
+    case = _get_case(db, current_user, case_id)
     old_status = case.status
     case.status = payload.status
     case.reviewer = current_user.email
@@ -252,4 +303,4 @@ def update_case_status(
         metadata={"reason": payload.reason},
     )
     db.commit()
-    return serialize_case(db, case, provider_scope=_provider_user_scope(current_user))
+    return serialize_case(db, case)

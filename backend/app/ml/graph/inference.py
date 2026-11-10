@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from datetime import timedelta
+from datetime import timedelta, timezone
 from typing import Any
 
 import torch
@@ -18,7 +18,9 @@ from app.models.qris_intelligence import QrisObservation
 
 
 def _naive(value):
-    return value.replace(tzinfo=None) if value and value.tzinfo else value
+    if not value or not value.tzinfo:
+        return value
+    return value.astimezone(timezone.utc).replace(tzinfo=None)
 
 
 def _row(observation: QrisObservation) -> CanonicalPayment:

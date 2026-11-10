@@ -35,12 +35,17 @@ x-backend-environment: &backend-environment
   ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-1440}
   PJP_SIMULATOR_SECRET: ${PJP_SIMULATOR_SECRET:?PJP_SIMULATOR_SECRET is required}
   PJP_SIMULATOR_NAME: ${PJP_SIMULATOR_NAME:-TrustPay Sandbox}
+  PSP_EVENT_KEYS: ${PSP_EVENT_KEYS:?PSP_EVENT_KEYS is required}
+  CENTRAL_INVESTIGATOR_EMAILS: ${CENTRAL_INVESTIGATOR_EMAILS:?CENTRAL_INVESTIGATOR_EMAILS is required}
   PAYER_PSEUDONYM_KEY: ${PAYER_PSEUDONYM_KEY:?PAYER_PSEUDONYM_KEY is required}
   QRIS_DEMO_MODE: ${QRIS_DEMO_MODE:-true}
   QRIS_WEBHOOK_TOLERANCE_SECONDS: ${QRIS_WEBHOOK_TOLERANCE_SECONDS:-300}
   QRIS_DEFAULT_CURRENCY: ${QRIS_DEFAULT_CURRENCY:-IDR}
   ML_ARTIFACT_DIR: /app/ml-artifacts
   ML_ARTIFACT_SIGNING_KEY: ${ML_ARTIFACT_SIGNING_KEY:?ML_ARTIFACT_SIGNING_KEY is required}
+  QRIS_OBSERVATION_WINDOW_SECONDS: ${QRIS_OBSERVATION_WINDOW_SECONDS:-86400}
+  QRIS_GNN_MAX_NODES: ${QRIS_GNN_MAX_NODES:-2000}
+  QRIS_CASE_GRAPH_MAX_OBSERVATIONS: ${QRIS_CASE_GRAPH_MAX_OBSERVATIONS:-100}
   AUTO_MIGRATE: "false"
   AUTO_SEED: "false"
   SEED_GRAPH_SYNC: ${SEED_GRAPH_SYNC:-false}
@@ -48,7 +53,6 @@ x-backend-environment: &backend-environment
 services:
   postgres:
     image: postgres:16.4-alpine
-    container_name: fingraph-qris-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-fingraph_qris}
@@ -67,7 +71,6 @@ services:
 
   neo4j:
     image: ${NEO4J_IMAGE:-neo4j:5.26.28-community}
-    container_name: fingraph-qris-neo4j
     restart: unless-stopped
     environment:
       NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:?NEO4J_PASSWORD is required}
@@ -87,7 +90,6 @@ services:
 
   migrate:
     image: ${BACKEND_IMAGE:-fingraph-qris-backend:latest}
-    container_name: fingraph-qris-migrate
     command: ["/app/scripts/migrate.sh"]
     environment: *backend-environment
     depends_on:
@@ -101,7 +103,6 @@ services:
 
   seed-demo:
     image: ${BACKEND_IMAGE:-fingraph-qris-backend:latest}
-    container_name: fingraph-qris-seed-demo
     command: ["/app/scripts/seed-demo.sh"]
     environment: *backend-environment
     depends_on:
@@ -117,7 +118,6 @@ services:
   backend:
     image: ${BACKEND_IMAGE:-fingraph-qris-backend:latest}
     build: { context: ./backend, dockerfile: Dockerfile }
-    container_name: fingraph-qris-backend
     restart: unless-stopped
     environment: *backend-environment
     command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "${UVICORN_WORKERS:-1}", "--proxy-headers", "--forwarded-allow-ips=*"]
@@ -146,7 +146,6 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_DEMO_MODE: ${DEMO_MODE:-true}
-    container_name: fingraph-qris-frontend
     restart: unless-stopped
     environment:
       NODE_ENV: production
@@ -168,7 +167,6 @@ services:
 
   reverse-proxy:
     image: nginxinc/nginx-unprivileged:1.27.4-alpine
-    container_name: fingraph-qris-reverse-proxy
     restart: unless-stopped
     ports:
       - "${PUBLIC_BIND_ADDRESS:-0.0.0.0}:${PUBLIC_HTTP_PORT:-80}:8080"
@@ -194,9 +192,9 @@ services:
 
 networks:
   edge:
-    name: fingraph-qris-edge
+    name: "${FINGRAPH_NETWORK_PREFIX:-fingraph-qris}-edge"
   internal:
-    name: fingraph-qris-internal
+    name: "${FINGRAPH_NETWORK_PREFIX:-fingraph-qris}-internal"
     internal: true
 
 volumes:

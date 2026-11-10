@@ -1,17 +1,18 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
 
-from sqlalchemy import or_
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.ml.graph.inference import score_observation
 from app.models.qris_intelligence import CaseObservation, NetworkCase, QrisObservation
+from app.services.audit import add_audit
 
 
 def utc_naive(value: datetime) -> datetime:
@@ -31,13 +32,20 @@ def _merchant_key(observation: QrisObservation) -> str:
 def _window_rows(db: Session, observation: QrisObservation) -> list[QrisObservation]:
     end = utc_naive(observation.received_at)
     start = end - timedelta(seconds=settings.QRIS_OBSERVATION_WINDOW_SECONDS)
-    return (
+    cap = max(1, settings.QRIS_GNN_MAX_NODES)
+    newest = (
         db.query(QrisObservation)
-        .filter(QrisObservation.received_at >= start, QrisObservation.received_at <= end)
-        .order_by(QrisObservation.received_at.asc(), QrisObservation.id.asc())
-        .limit(settings.QRIS_GNN_MAX_NODES)
+        .filter(
+            QrisObservation.received_at >= start,
+            QrisObservation.received_at <= end,
+            QrisObservation.id != observation.id,
+        )
+        .order_by(QrisObservation.received_at.desc(), QrisObservation.id.desc())
+        .limit(max(cap - 1, 0))
         .all()
     )
+    rows = [*newest, observation]
+    return sorted(rows, key=lambda row: (utc_naive(row.received_at), str(row.id)))
 
 
 def graph_heuristic_score(db: Session, observation: QrisObservation) -> tuple[float, dict[str, Any]]:
@@ -85,7 +93,11 @@ def _candidate(component: list[QrisObservation]) -> dict[str, Any] | None:
     payer_keys = sorted({key for row in component if (key := _payer_key(row))})
     if len(merchants) < 3 or len(acquirers) < 3 or len(payer_keys) < 2:
         return None
-    payer_digests = [hashlib.sha256("|".join(key).encode()).hexdigest()[:16] for key in payer_keys]
+    pseudonym_key = settings.PAYER_PSEUDONYM_KEY.encode() or b"qris-local-key"
+    payer_digests = [
+        hmac.new(pseudonym_key, "|".join(key).encode(), hashlib.sha256).hexdigest()[:16]
+        for key in payer_keys
+    ]
     fingerprint_payload = {"merchants": merchants, "acquirers": acquirers, "payers": payer_digests}
     fingerprint = hashlib.sha256(json.dumps(fingerprint_payload, sort_keys=True).encode()).hexdigest()
     return {
@@ -102,12 +114,22 @@ def _candidate(component: list[QrisObservation]) -> dict[str, Any] | None:
 
 
 def _find_existing_case(db: Session, candidate: dict[str, Any]) -> NetworkCase | None:
+    exact = db.query(NetworkCase).filter(NetworkCase.candidate_fingerprint == candidate["fingerprint"]).first()
+    if exact:
+        return exact
+
     merchant_set = set(candidate["merchants"])
-    provider_set = set(candidate["providers"])
+    acquirer_set = set(candidate["acquirers"])
+    payer_set = set(candidate["payer_link_digests"])
     cases = db.query(NetworkCase).filter(NetworkCase.status.in_(["suspected", "under_review"])).all()
     for case in cases:
         participants = (case.evidence or {}).get("participants", {})
-        if len(merchant_set & set(participants.get("merchants", []))) >= 2 and provider_set & set(participants.get("providers", [])):
+        evidence_payers = set((case.evidence or {}).get("payer_link_digests", []))
+        if (
+            set(participants.get("merchants", [])) <= merchant_set
+            and set(participants.get("acquirers", [])) <= acquirer_set
+            and evidence_payers <= payer_set
+        ):
             return case
     return None
 
@@ -154,9 +176,30 @@ def score_and_open_case(db: Session, observation: QrisObservation) -> tuple[dict
                 db.add(case)
                 db.flush()
             else:
+                if case.status == "dismissed":
+                    previous = {
+                        "status": case.status,
+                        "reviewer": case.reviewer,
+                        "reviewer_decision": case.reviewer_decision,
+                        "decision_reason": case.decision_reason,
+                    }
+                    add_audit(
+                        db,
+                        action="reopen_network_case",
+                        entity_type="network_case",
+                        entity_id=str(case.id),
+                        description="New matching evidence reopened a previously dismissed network case.",
+                        actor="system:qris",
+                        metadata={"previous_review": previous, "reason": "new_matching_observation"},
+                    )
+                    case.status = "suspected"
+                    case.reviewer = None
+                    case.reviewer_decision = None
+                    case.decision_reason = None
                 case.risk_score = max(case.risk_score, risk_score)
                 case.model_provenance = provenance
                 case.evidence = evidence
+                case.candidate_fingerprint = candidate["fingerprint"]
             existing_ids = {link.observation_id for link in case.observation_links}
             for observation_id in candidate["observation_ids"]:
                 observation_uuid = UUID(observation_id)

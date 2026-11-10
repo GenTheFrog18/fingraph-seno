@@ -1,9 +1,11 @@
 # FinGraph QRIS
 
-FinGraph QRIS adalah asisten keamanan pembayaran bagi UMKM: **pastikan
-pembayaran masuk sebelum pesanan diserahkan**. Merchant mendapat keputusan dan
-tindakan yang mudah dipahami, sementara analyst dan admin mendapat investigasi,
-graph, model monitoring, audit, dan activity monitoring sesuai perannya.
+FinGraph QRIS adalah platform intelijen fraud institusional lintas PSP. Event
+QRIS dari beberapa provider diterima melalui HMAC, dinormalisasi sebagai
+observation, dikorelasikan menjadi graph evidence, lalu diprioritaskan untuk
+investigator sentral menggunakan GNN dan sinyal heuristik yang dapat diaudit.
+Workflow merchant lama tetap tersedia sebagai legacy surface, tetapi bukan
+jalur utama produk lintas-PSP.
 
 Status proyek: **deployment-ready MVP dengan konfigurasi production-like**.
 QRIS/PJP masih berupa simulator; aplikasi belum terhubung ke Bank Indonesia,
@@ -40,15 +42,17 @@ Browser
 Browser tidak perlu membuka port backend. PostgreSQL dan Neo4j juga tidak
 dipublikasikan pada konfigurasi production.
 
-Fitur utama:
+Jalur produk utama:
 
-- dashboard berbeda untuk `merchant`, `analyst`, dan `admin`;
-- RBAC dan ownership validation di backend;
-- QRIS guard, fraud/risk score, alasan, rekomendasi, dan alert;
-- Smart Impact Dashboard dengan filter dan agregasi server-side;
-- Action Log, activity monitoring admin, laporan, graph, dan lintas wilayah;
-- prototype GraphSAGE, adaptive learning, dan FedAvg;
-- paket Basic Rp49.000, Growth Rp99.000, dan Premium Rp149.000/bulan.
+- PSP mengirim event signed dengan `X-FG-Provider`, timestamp, dan HMAC;
+- backend menyimpan data lintas PSP di PostgreSQL dengan idempotensi provider/event;
+- GNN GraphSAGE yang ditandatangani berjalan post-event, dengan fallback graph heuristic;
+- investigator sentral melihat kasus, observasi, provenance, dan graph Cytoscape;
+- setiap keputusan status dan reopen case masuk audit log; payer hanya tampil sebagai alias HMAC case-local.
+
+Surface legacy seperti merchant dashboard, federated learning, cross-border, dan
+model lab dipertahankan untuk kompatibilitas, tetapi tidak muncul pada navigasi
+investigator utama.
 
 Paket saat ini merupakan entitlement MVP; payment gateway dan penagihan
 otomatis belum diimplementasikan.
@@ -58,15 +62,14 @@ otomatis belum diimplementasikan.
 Prasyarat: Docker Engine 24+ dan Docker Compose v2.20+.
 
 ```bash
-cp .env.demo.example .env
-docker compose --env-file .env \
-  -f docker-compose.yml -f docker-compose.demo.yml up -d --build
-docker compose --env-file .env --profile demo-seed \
-  -f docker-compose.yml -f docker-compose.demo.yml run --rm seed-demo
-DEMO_MODE=true ./scripts/smoke-test.sh http://localhost
+./scripts/stabilization-demo.sh start
+./scripts/stabilization-demo.sh events
 ```
 
-Buka `http://localhost`. Seed bersifat eksplisit dan idempotent.
+Buka `http://localhost:18080`. Script memakai project, network, PostgreSQL,
+Neo4j, dan volume artifact GNN yang terpisah. `restart` mempertahankan data dan
+artifact; `stop` hanya menghentikan stack project demo tersebut. Seed bersifat
+eksplisit dan idempotent. Untuk port lain, set `FINGRAPH_DEMO_PORT`.
 
 Untuk menerbitkan demo melalui tunnel, instal dan konfigurasi `cloudflared`
 sesuai dokumentasi resminya, lalu arahkan public hostname ke

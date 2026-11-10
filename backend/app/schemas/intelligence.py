@@ -2,16 +2,19 @@ from datetime import datetime, timezone
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class QrisObservationIngest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     schema_version: Literal["fingraph.qris.observation.v1"]
     source_event_id: str = Field(min_length=1, max_length=120)
     source_payment_id: str = Field(min_length=1, max_length=120)
     event_type: Literal["payment.succeeded"]
     occurred_at: datetime
     payment_method: Literal["QRIS"]
+    currency: Literal["IDR"] = "IDR"
     amount_idr: int = Field(gt=0, le=10_000_000_000_000)
     merchant_ref: str = Field(min_length=1, max_length=120)
     acquirer_id: str = Field(min_length=1, max_length=80)
