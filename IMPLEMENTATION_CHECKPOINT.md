@@ -10,6 +10,7 @@ Updated: 2026-11-10
 - Gate 3: passed locally. Event idempotency/conflict behavior, dismissed-case automatic reopen with audit history, and newest-history/current-observation window selection are covered by backend tests.
 - Gate 4: passed locally. Case graph response is bounded and includes payment→merchant and payment→case-local-HMAC-payer-link edges with reasons; the UI renders the graph with Cytoscape rather than counts only.
 - Gate 5: passed locally. Backend image builds; focused backend tests pass; frontend typecheck, lint (one pre-existing warning in `auth.ts`), and ten presentation tests pass.
+- Gate 5.1: isolated stack is live on the unique demo project at port 18081; PostgreSQL readiness, Neo4j readiness, signed artifact readiness, login, case detail, graph privacy, status transitions, automatic reopen audit, and restart persistence have been observed. The demo runner now accepts a stable `--occurred-at` so repeated run IDs prove idempotency rather than payload conflict.
 - Gate 6: pending. The isolated persistent PostgreSQL demo, browser acceptance, restart persistence, full test suite, and final stabilization ZIP remain.
 
 ## Exact next work

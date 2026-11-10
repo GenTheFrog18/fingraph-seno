@@ -75,8 +75,7 @@ def _post(base_url: str, provider: str, payload: dict[str, object], keys: dict[s
         return result
 
 
-def _events(run_id: str) -> list[tuple[str, dict[str, object]]]:
-    occurred_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+def _events(run_id: str, occurred_at: str) -> list[tuple[str, dict[str, object]]]:
     common = {
         "schema_version": "fingraph.qris.observation.v1",
         "event_type": "payment.succeeded",
@@ -116,10 +115,11 @@ def main() -> None:
     parser.add_argument("--base-url", default=os.getenv("FINGRAPH_BASE_URL", "http://127.0.0.1:8000"))
     parser.add_argument("--output", type=Path)
     parser.add_argument("--run-id", default=f"demo-{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%S')}")
+    parser.add_argument("--occurred-at", default=os.getenv("FINGRAPH_DEMO_OCCURRED_AT", "2026-11-10T12:00:00Z"))
     args = parser.parse_args()
 
     keys = _keys()
-    events = _events(args.run_id)
+    events = _events(args.run_id, args.occurred_at)
     missing = sorted({provider for provider, _ in events} - keys.keys())
     if missing:
         raise SystemExit(f"Missing PSP_EVENT_KEYS for: {', '.join(missing)}")
