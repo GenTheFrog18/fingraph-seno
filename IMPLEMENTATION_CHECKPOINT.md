@@ -9,14 +9,14 @@ Updated: 2026-11-10
 - Gate 2: passed. Additive `qris_observations`/`network_cases`/`case_observations` storage, per-PSP HMAC authentication, freshness, idempotency, conflict handling, strict schema validation, and redacted case APIs are implemented.
 - Gate 3: passed. Learned QRIS GraphSAGE inference is used when a verified artifact is present; the bounded graph heuristic remains a separate fallback and is recorded in provenance.
 - Gate 4: passed. The analyst shell includes a network-case list/detail view, status transitions, evidence observations, and a privacy-preserving case graph summary.
-- Gate 5: in final audit. Re-run backend/frontend checks, Docker build, live three-PSP demo, and package the required return ZIP.
+- Gate 5: passed. The final isolated backend run applied Alembic head and passed 33 tests. Frontend typecheck, lint (one pre-existing warning in `auth.ts`), and production build passed. The Docker image built successfully and imports `torch 2.5.1+cpu`, `torch-geometric 2.6.1`, and `app.main`.
+- Live evidence: built-image demo trained `qris_graph_graphsage_20261110_034112` with artifact hash `e248ff073fa487839adb708c098b6dc5b4c3affc4d457535ea4a19ef51a264db`, temporal split, heterogeneous GraphSAGE, validation PR-AUC `0.225`, test PR-AUC `0.2937`; six signed PSP events were accepted, all six received complete learned-GNN scores, and one network case was opened.
+- Gate 6: in progress. Package the required return ZIP and perform the final artifact/working-tree audit.
 
 ## Exact next work
 
-1. Re-run the final isolated backend and frontend suites.
-2. Validate the production Docker image includes the pinned PyG dependency.
-3. Capture sanitized live-demo and GNN evidence.
-4. Build `FINGRAPH_IMPLEMENTATION_RETURN.zip` with the packet’s required Markdown reports.
+1. Build `FINGRAPH_IMPLEMENTATION_RETURN.zip` with the packet’s required Markdown reports.
+2. Verify the ZIP manifest, absence of credentials/model binaries, pushed commit, and preserved unrelated worktree change.
 
 ## Safety
 
