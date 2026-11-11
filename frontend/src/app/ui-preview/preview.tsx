@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import cytoscape, { type Core, type ElementDefinition } from "cytoscape";
 import coseBilkent from "cytoscape-cose-bilkent";
@@ -44,7 +45,7 @@ export function InvestigationPreview({ variant }: { variant: Variant }) {
 
   const other = variant === "classic" ? "glass" : "classic";
   return (
-    <div className={`fg-preview fg-${variant}`}>
+    <div className={`fg-preview fg-${variant} fg-screen-${screen}`}>
       <div className="fg-variant-bar" aria-label="Pilihan desain">
         <span>UI EXPERIMENT</span>
         <Link href="/ui-preview/classic" aria-current={variant === "classic" ? "page" : undefined}>FinGraph</Link>
@@ -69,7 +70,7 @@ export function InvestigationPreview({ variant }: { variant: Variant }) {
 }
 
 function Brand() {
-  return <span className="fg-brand"><span className="fg-brand-mark"><Network size={20} strokeWidth={2.5} /></span><span>FinGraph<small>QRIS INTELLIGENCE</small></span></span>;
+  return <span className="fg-brand"><span className="fg-brand-mark"><Image src="/globe.svg" width={40} height={40} alt="" /></span><span>FinGraph<small>QRIS</small></span></span>;
 }
 
 function Landing({ variant, onLogin }: { variant: Variant; onLogin: () => void }) {

@@ -29,7 +29,7 @@ Keep the current Next.js 16, React 19, TypeScript, Tailwind CSS 4, Cytoscape and
 
 | Direction | Benefits | Tradeoff |
 | --- | --- | --- |
-| FinGraph current language: light, solid surfaces, dark text and green accent | Highest scanability for dense investigation tables; close to existing UI and fastest to integrate | Less visually distinctive on stage |
+| FinGraph original language: black-and-white landing, cream dashboard, white cards and mint accent | Matches the existing product identity and keeps dense investigation tables readable | Less visually distinctive on stage |
 | Restrained glassmorphism: dark layered background, translucent shell and summary cards | Strong presentation identity while keeping the same workflows | Blur and transparency can reduce readability, so graph canvas, tables and forms remain opaque/high contrast |
 
 Both variants use the same case list, case detail, case graph, audit action and login flow. They are isolated preview routes; choosing the production presentation route later does not require a framework migration.
@@ -38,5 +38,7 @@ Both variants use the same case list, case detail, case graph, audit action and 
 
 - `/ui-preview/classic` — current FinGraph visual language.
 - `/ui-preview/glass` — restrained glassmorphism.
+
+The classic preview was subsequently restyled to match the original landing and dashboard colors. Its login, case, observation, alert and evidence-graph behavior is unchanged. The glass route remains an optional comparison.
 
 The local source snapshot is under `ui-experiments/current-project-snapshot/`; experiment notes are under `ui-experiments/README.md`. The source snapshot stays local and is not a second production codebase.
