@@ -18,7 +18,6 @@ import {
 
 import { AppLogo } from "@/components/layout/app-logo";
 import { Reveal } from "@/components/marketing/reveal";
-import { PricingCards } from "@/components/product/pricing";
 import { PublicTrustMetrics } from "@/components/product/public-trust-metrics";
 import { Button } from "@/components/ui/button";
 
@@ -77,7 +76,7 @@ export default function LandingPage() {
       <PublicHeader />
 
       <section className="bg-black">
-        <Reveal className="mx-auto max-w-[1440px] px-4 pb-12 pt-20 sm:px-6 sm:pb-16 sm:pt-28 lg:px-10 lg:pt-32">
+        <Reveal className="mx-auto max-w-[1240px] px-4 pb-12 pt-20 sm:px-6 sm:pb-16 sm:pt-28 lg:pt-32">
           <p className="text-xs font-normal tracking-[.08em] text-zinc-400">
             INTELIJEN FRAUD QRIS LINTAS PSP
           </p>
@@ -216,21 +215,50 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      <section id="harga" className="bg-[#fbfbf5] py-20 text-black sm:py-28">
+      <section id="operasi" className="bg-[#fbfbf5] py-20 text-black sm:py-28">
         <Reveal className="mx-auto max-w-[1240px] px-4 sm:px-6">
           <div className="max-w-3xl">
-            <p className="text-xs tracking-[.08em] text-zinc-500">PAKET FINGRAPH</p>
+            <p className="text-xs tracking-[.08em] text-zinc-500">OPERASI FINGRAPH</p>
             <h2 className="font-display mt-6 text-[44px] font-light leading-[1.08] tracking-[-.03em] sm:text-[58px]">
-              Mulai kecil. Tambah perlindungan saat usaha tumbuh.
+              Satu lapisan intelijen untuk jaringan pembayaran yang tersebar.
             </h2>
             <p className="mt-5 max-w-2xl text-base leading-7 text-zinc-600">
-              Harga katalog MVP dalam Rupiah per bulan. Pemilihan paket pada
-              Mode Demo tidak memproses pembayaran.
+              FinGraph menerima observasi signed dari PSP yang berpartisipasi,
+              menghubungkan sinyal secara terbatas, lalu menyajikannya sebagai
+              kasus yang dapat diperiksa oleh tim berwenang.
             </p>
           </div>
-          <div className="mt-12">
-            <PricingCards />
+          <div className="mt-12 grid gap-px overflow-hidden border border-zinc-200 bg-zinc-200 md:grid-cols-3">
+            {[
+              ["01", "Integrasi PSP", "Event QRIS diverifikasi dengan HMAC, freshness window, dan idempotensi provider."],
+              ["02", "Graph dan model", "GraphSAGE dan heuristic topology membantu memprioritaskan hubungan yang perlu dilihat."],
+              ["03", "Ruang investigator", "Evidence, provenance, dan keputusan status tersimpan dalam satu alur audit."],
+            ].map(([number, title, body]) => (
+              <article key={number} className="min-h-[220px] bg-[#fbfbf5] p-7 sm:p-9">
+                <span className="font-technical text-xs text-zinc-500">{number}</span>
+                <h3 className="mt-12 text-xl font-medium">{title}</h3>
+                <p className="mt-3 text-sm leading-6 text-zinc-600">{body}</p>
+              </article>
+            ))}
           </div>
+        </Reveal>
+      </section>
+
+      <section id="kontak" className="bg-[#fbfbf5] pb-20 text-black sm:pb-28">
+        <Reveal className="mx-auto grid max-w-[1240px] gap-8 border-t border-zinc-200 px-4 pt-12 sm:px-6 md:grid-cols-[1fr_auto] md:items-end">
+          <div className="max-w-2xl">
+            <p className="text-xs tracking-[.08em] text-zinc-500">TENTANG DAN KONTAK</p>
+            <h2 className="font-display mt-5 text-[36px] font-light leading-[1.08] tracking-[-.03em] sm:text-[48px]">
+              Dibuat untuk percakapan teknis yang lebih tajam.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-zinc-600">
+              Tinjau alur demo, pahami batas data, dan gunakan ruang investigasi
+              untuk melihat bagaimana sinyal lintas PSP dirangkai menjadi evidence.
+            </p>
+          </div>
+          <Button asChild variant="outline" size="lg" className="w-fit">
+            <Link href="/login">Hubungi melalui ruang demo <ArrowRight className="ml-2" /></Link>
+          </Button>
         </Reveal>
       </section>
 
@@ -296,7 +324,8 @@ export default function LandingPage() {
             <a href="#cara-kerja">Cara kerja</a>
             <a href="#untuk-investigator">Untuk investigator</a>
             <a href="#fitur">Fitur</a>
-            <a href="#harga">Harga</a>
+            <a href="#operasi">Operasi</a>
+            <a href="#kontak">Contact</a>
             <Link href="/login">Masuk</Link>
           </div>
         </div>
@@ -310,14 +339,15 @@ export default function LandingPage() {
 
 function PublicHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-900 bg-black/95 text-white backdrop-blur">
-      <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-10">
+    <header className="sticky top-0 z-50 border-b border-zinc-900 bg-black text-white">
+      <div className="mx-auto flex h-[72px] max-w-[1240px] items-center justify-between px-4 sm:px-6">
         <AppLogo inverted />
         <nav className="hidden items-center gap-8 text-[15px] text-zinc-300 md:flex" aria-label="Navigasi utama">
           <a href="#cara-kerja" className="hover:text-white">Cara kerja</a>
           <a href="#untuk-investigator" className="hover:text-white">Untuk investigator</a>
           <a href="#fitur" className="hover:text-white">Fitur</a>
-          <a href="#harga" className="hover:text-white">Harga</a>
+          <a href="#operasi" className="hover:text-white">Operasi</a>
+          <a href="#kontak" className="hover:text-white">Contact</a>
         </nav>
         <div className="hidden items-center sm:flex">
           <Button asChild className="h-11 bg-white px-5 text-black hover:bg-zinc-200">
@@ -328,12 +358,13 @@ function PublicHeader() {
           <summary className="grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full border border-zinc-700" aria-label="Buka navigasi">
             <Menu className="h-5 w-5" />
           </summary>
-          <div className="absolute right-0 top-14 w-64 rounded-xl border border-zinc-800 bg-[#0a0a0a] p-2 shadow-2xl">
+          <div className="absolute right-0 top-14 w-64 rounded-lg border border-zinc-800 bg-[#0a0a0a] p-2 shadow-2xl">
             {[
               ["#cara-kerja", "Cara kerja"],
               ["#untuk-investigator", "Untuk investigator"],
               ["#fitur", "Fitur"],
-              ["#harga", "Harga"],
+              ["#operasi", "Operasi"],
+              ["#kontak", "Contact"],
             ].map(([href, label]) => (
               <a key={href} href={href} className="block rounded-full px-4 py-3 text-sm">{label}</a>
             ))}
@@ -349,18 +380,18 @@ function PublicHeader() {
 
 function PaymentWorkspacePreview() {
   const rows = [
-    ["Rp350.000", "Pesanan katering", "Terverifikasi", "12", "96", "text-[#137a3e] bg-[#e8f8ed]"],
-    ["Rp150.000", "Paket batik", "Perlu diperiksa", "58", "84", "text-[#8a5600] bg-[#fff3d6]"],
-    ["Rp2.400.000", "Pembelian grosir", "Berisiko", "91", "95", "text-[#b42318] bg-[#fce8e8]"],
+    ["psp_a", "merchant_alpha", "Perlu diperiksa", "57", "45", "text-[#8a5600] bg-[#fff3d6]"],
+    ["psp_b", "merchant_beta", "Terhubung", "44", "41", "text-[#165e42] bg-[#e5f6eb]"],
+    ["psp_c", "merchant_gamma", "Perlu diperiksa", "62", "43", "text-[#8a5600] bg-[#fff3d6]"],
   ];
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-3 shadow-[0_8px_8px_rgba(0,0,0,.08),0_4px_4px_rgba(0,0,0,.08),0_2px_2px_rgba(0,0,0,.08),0_0_0_1px_rgba(0,0,0,.06)] sm:p-5">
+    <div className="border border-zinc-200 bg-white p-3 sm:p-5">
       <div className="flex items-center justify-between px-2 py-3">
         <div>
-          <p className="font-medium">Pembayaran terbaru</p>
-          <p className="mt-1 text-xs text-zinc-500">Warung Sari · Pasar Gede</p>
+          <p className="font-medium">Kasus terpilih</p>
+          <p className="mt-1 text-xs text-zinc-500">Koordinasi merchant · 3 PSP</p>
         </div>
-        <span className="rounded-full bg-black px-3 py-1.5 text-xs text-white">Lihat semua</span>
+        <span className="rounded-full bg-black px-3 py-1.5 text-xs text-white">Evidence</span>
       </div>
       <div className="mt-2 divide-y divide-zinc-200 border-y border-zinc-200">
         {rows.map(([amount, order, status, score, confidence, tone]) => (
@@ -369,7 +400,7 @@ function PaymentWorkspacePreview() {
               <QrCode className="h-4 w-4" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="font-medium">{amount}</p>
+              <p className="font-technical text-xs font-medium">{amount}</p>
               <p className="mt-1 truncate text-xs text-zinc-500">{order}</p>
               <p className="mt-1.5 text-[11px] text-zinc-500">
                 Risiko {score}/100 · Keyakinan {confidence}%

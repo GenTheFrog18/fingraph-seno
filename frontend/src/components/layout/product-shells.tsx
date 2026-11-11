@@ -301,13 +301,13 @@ export function AppShellAnalyst({
       : [];
   return (
     <div className="min-h-screen bg-background">
-      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[248px] border-r border-border bg-surface lg:block">
+      <aside className="fixed inset-y-0 left-0 z-30 hidden w-[236px] border-r border-border bg-surface lg:block">
         <div className="flex h-full flex-col">
           <div className="flex h-[68px] items-center border-b border-border px-5">
             <AppLogo href="/dashboard" />
           </div>
           <nav className="no-scrollbar flex-1 overflow-y-auto px-3 py-4">
-            <p className="px-3 pb-2 text-[11px] font-bold tracking-[.12em] text-muted-foreground">
+            <p className="px-3 pb-2 font-technical text-[10px] tracking-[.12em] text-muted-foreground">
               OPERASIONAL
             </p>
             {analystPrimary.map((item) => (
@@ -319,7 +319,7 @@ export function AppShellAnalyst({
             ))}
             {secondary.length > 0 && (
               <>
-                <p className="mt-5 px-3 pb-2 text-[11px] font-bold tracking-[.12em] text-muted-foreground">
+                <p className="mt-5 px-3 pb-2 font-technical text-[10px] tracking-[.12em] text-muted-foreground">
                   ADMIN
                 </p>
                 {secondary.map((item) => (
@@ -341,10 +341,10 @@ export function AppShellAnalyst({
           </div>
         </div>
       </aside>
-      <div className="min-h-screen lg:pl-[248px]">
+      <div className="min-h-screen lg:pl-[236px]">
         <TopBar user={user} />
         <AnalystMobileNav items={[...analystPrimary, ...secondary]} />
-        <main className="mx-auto w-full max-w-[1440px] px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
+        <main className="mx-auto w-full max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-10">
           {children}
         </main>
       </div>
@@ -425,7 +425,7 @@ export function TopBar({
 }) {
   const { plan } = useSubscription();
   return (
-    <header className="sticky top-0 z-20 flex h-[64px] items-center justify-between border-b border-border bg-surface px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 flex h-[64px] items-center justify-between border-b border-border bg-background px-4 sm:px-6 lg:px-8">
       <div className="lg:hidden">
         <AppLogo href="/dashboard" />
       </div>
@@ -446,13 +446,15 @@ export function TopBar({
         )}
       </div>
       <div className="flex items-center gap-1">
-        <Link
-          href={user.role === "merchant" ? "/dashboard/plans" : "/dashboard"}
-          className="mr-1 hidden sm:block"
-          aria-label={`Paket ${plan}`}
-        >
-          <PlanBadge plan={plan} compact />
-        </Link>
+        {merchant && (
+          <Link
+            href="/dashboard/plans"
+            className="mr-1 hidden sm:block"
+            aria-label={`Paket ${plan}`}
+          >
+            <PlanBadge plan={plan} compact />
+          </Link>
+        )}
         {isDemoBuild && (
           <span className="mr-1 hidden rounded-md bg-info-soft px-2 py-1 text-[10px] font-bold text-info sm:inline">
             DEMO
@@ -533,7 +535,7 @@ export function UserMenu({
         <DropdownMenuLabel>
           <div className="flex items-center justify-between gap-2">
             <p className="truncate text-sm">{user.full_name}</p>
-            <PlanBadge plan={plan} compact />
+            {user.role === "merchant" && <PlanBadge plan={plan} compact />}
           </div>
           <p className="mt-0.5 truncate text-xs font-normal text-muted-foreground">
             {user.email}

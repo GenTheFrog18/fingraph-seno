@@ -7,7 +7,7 @@ import { Toaster } from "sonner";
 export const metadata: Metadata = {
   title: "FinGraph QRIS",
   description:
-    "Asisten keamanan pembayaran untuk UMKM. Pembayaran jelas, usaha lebih tenang.",
+    "Intelijen fraud QRIS lintas PSP untuk investigasi institusional berbasis graph dan GNN.",
   icons: {
     icon: "/globe.svg",
     shortcut: "/globe.svg",

@@ -92,7 +92,7 @@
   --chart-3: #ad6b00;
   --chart-4: #526568;
   --chart-5: #b42318;
-  --radius: 12px;
+  --radius: 8px;
   --sidebar: #ffffff;
   --sidebar-foreground: #000000;
   --sidebar-primary: #000000;
@@ -173,7 +173,7 @@
 
 .font-technical { font-family: var(--font-plex-mono); }
 .font-display { font-family: var(--font-heading); font-feature-settings: "ss03"; }
-.surface-raised { background: var(--surface-raised); box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 5%, transparent), 0 5px 10px color-mix(in srgb, var(--foreground) 8%, transparent); }
+.surface-raised { background: var(--surface-raised); box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent), 0 3px 8px color-mix(in srgb, var(--foreground) 5%, transparent); }
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .text-success { color: var(--success); }

@@ -54,7 +54,7 @@ export default function CasesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
         title="Kasus jaringan"
         description="Tinjau sinyal lintas PSP yang sudah diterima setelah transaksi. Token payer tetap dipseudonimkan dan tidak ditampilkan di ruang kerja ini."
@@ -82,8 +82,8 @@ export default function CasesPage() {
       >
         {list.data && (
           <div className="grid items-start gap-6 lg:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.6fr)]">
-            <section className="overflow-hidden rounded-xl border border-border bg-surface" aria-label="Daftar kasus">
-              <div className="border-b border-border px-4 py-3 text-sm font-medium">Daftar pemeriksaan</div>
+            <section className="overflow-hidden rounded-lg border border-border bg-surface" aria-label="Daftar kasus">
+              <div className="border-b border-border px-4 py-3 font-technical text-[11px] tracking-[.06em] text-muted-foreground">DAFTAR PEMERIKSAAN</div>
               <div className="divide-y divide-border">
                 {list.data.items.map((item) => (
                   <button
@@ -122,7 +122,7 @@ function CaseDetail({ caseItem, onUpdate }: { caseItem: NetworkCaseDetail; onUpd
   const providers = caseItem.participants.providers ?? [];
   const merchants = caseItem.participants.merchants ?? [];
   return (
-    <section className="space-y-5 rounded-xl border border-border bg-surface p-5" aria-label="Detail kasus">
+    <section className="space-y-6 rounded-lg border border-border bg-surface p-5 sm:p-6" aria-label="Detail kasus">
       <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -142,7 +142,7 @@ function CaseDetail({ caseItem, onUpdate }: { caseItem: NetworkCaseDetail; onUpd
         <Metric label="Merchant terhubung" value={String(merchants.length)} detail="ID namespaced per PSP" />
         <Metric label="Observasi" value={String(caseItem.observations.length)} detail={`${caseItem.payer_link_count} payer links`} />
       </div>
-      <div className="rounded-lg border border-info/20 bg-info/5 p-4 text-sm leading-6 text-muted-foreground">
+      <div className="border border-border bg-surface-subtle p-4 text-sm leading-6 text-muted-foreground">
         <div className="flex items-center gap-2 font-medium text-foreground"><Network className="h-4 w-4" /> Evidence graph</div>
         <p className="mt-1">Graph investigation menyertakan payment-to-merchant relationships yang sudah namespaced provider. Payer token sengaja dihilangkan dari respons UI.</p>
         <p className="mt-2 text-xs">{graph.loading ? "Memuat graph…" : graph.data ? `${graph.data.nodes.length} nodes · ${graph.data.edges.length} edges · ${graph.data.privacy}` : graph.error ? graph.error : "Graph belum tersedia"}</p>
@@ -188,12 +188,12 @@ function CaseGraph({ graph }: { graph: NetworkCaseGraph }) {
       minZoom: 0.35,
       maxZoom: 2.5,
       style: [
-        { selector: "node", style: { label: "data(label)", "font-size": 9, "text-wrap": "wrap", "text-max-width": 90, "background-color": "#2563eb", color: "#111827", width: 30, height: 30, "border-width": 2, "border-color": "#ffffff" } },
-        { selector: "node.merchant", style: { "background-color": "#15803d", shape: "rectangle" } },
-        { selector: "node.payer_link", style: { "background-color": "#7c3aed", shape: "round-rectangle" } },
-        { selector: "node.payment", style: { "background-color": "#2563eb", shape: "ellipse" } },
-        { selector: "edge", style: { label: "data(label)", "font-size": 8, "line-color": "#94a3b8", "target-arrow-color": "#94a3b8", "target-arrow-shape": "triangle", "curve-style": "bezier", width: 1.5 } },
-        { selector: "node:selected", style: { "border-color": "#f59e0b", "border-width": 4 } },
+        { selector: "node", style: { label: "data(label)", "font-size": 10, "font-family": "Inter, sans-serif", "text-wrap": "wrap", "text-max-width": 110, "background-color": "#111111", color: "#ffffff", width: 34, height: 34, "border-width": 2, "border-color": "#fbfbf5", "text-outline-width": 0 } },
+        { selector: "node.merchant", style: { "background-color": "#165e42", shape: "rectangle" } },
+        { selector: "node.payer_link", style: { "background-color": "#c9f8d9", color: "#111111", shape: "round-rectangle", "border-color": "#165e42" } },
+        { selector: "node.payment", style: { "background-color": "#111111", shape: "ellipse" } },
+        { selector: "edge", style: { label: "data(label)", "font-size": 8, "font-family": "Inter, sans-serif", color: "#5c615d", "text-background-color": "#fbfbf5", "text-background-opacity": 0.85, "line-color": "#a8ada6", "target-arrow-color": "#a8ada6", "target-arrow-shape": "triangle", "curve-style": "bezier", width: 1.25 } },
+        { selector: "node:selected", style: { "border-color": "#165e42", "border-width": 4 } },
       ] as cytoscape.StylesheetStyle[],
       layout: { name: "cose-bilkent", animate: false, fit: true, padding: 36 } as cytoscape.LayoutOptions,
     });
@@ -205,16 +205,21 @@ function CaseGraph({ graph }: { graph: NetworkCaseGraph }) {
   }, [graph]);
 
   return (
-    <div className="rounded-lg border border-border bg-surface-subtle p-3">
+      <div className="border border-border bg-surface-subtle p-3 sm:p-4">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>Payment → merchant dan payment → payer-link</span>
         <span>{graph.truncated ? `Menampilkan ${graph.returned_observations} dari ${graph.total_observations} observasi` : "Seluruh observasi kasus ditampilkan"}</span>
       </div>
-      <div ref={containerRef} className="h-[420px] w-full rounded-md bg-surface" aria-label="Graph evidence kasus" />
+      <div className="mb-3 flex flex-wrap gap-x-5 gap-y-2 border-y border-border py-2 text-[11px] text-muted-foreground" aria-label="Legenda graph">
+        <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-full bg-[#111111]" />Payment</span>
+        <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 bg-[#165e42]" />Merchant namespaced</span>
+        <span className="flex items-center gap-2"><i className="h-2.5 w-2.5 rounded-sm bg-[#c9f8d9] ring-1 ring-[#165e42]" />Payer alias</span>
+      </div>
+      <div ref={containerRef} className="h-[460px] w-full bg-surface" aria-label="Graph evidence kasus" />
     </div>
   );
 }
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return <div className="rounded-lg border border-border bg-surface-subtle p-3"><p className="text-xs text-muted-foreground">{label}</p><p className="mt-1 text-xl font-medium">{value}</p><p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p></div>;
+  return <div className="border border-border bg-surface-subtle p-3"><p className="font-technical text-[10px] tracking-[.04em] text-muted-foreground">{label}</p><p className="mt-1 text-xl font-medium">{value}</p><p className="mt-1 truncate text-xs text-muted-foreground">{detail}</p></div>;
 }
