@@ -24,6 +24,16 @@ export PAYER_PSEUDONYM_KEY="${PAYER_PSEUDONYM_KEY:-demo-payer-pseudonym-key}"
 export ML_ARTIFACT_SIGNING_KEY="${ML_ARTIFACT_SIGNING_KEY:-demo-artifact-signing-key}"
 export PSP_EVENT_KEYS="${PSP_EVENT_KEYS:-psp_a=demo-psp-a-key;psp_b=demo-psp-b-key;psp_c=demo-psp-c-key}"
 export CENTRAL_INVESTIGATOR_EMAILS="${CENTRAL_INVESTIGATOR_EMAILS:-analyst@fingraph.id;admin@fingraph.id}"
+if [[ -z "${TRUSTED_HOSTS:-}" ]]; then
+  TRUSTED_HOSTS="localhost,127.0.0.1"
+  if command -v tailscale >/dev/null 2>&1; then
+    DEMO_TAILSCALE_IP="$(tailscale ip -4 2>/dev/null || true)"
+    if [[ "$DEMO_TAILSCALE_IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]]; then
+      TRUSTED_HOSTS+=",${DEMO_TAILSCALE_IP}"
+    fi
+  fi
+  export TRUSTED_HOSTS
+fi
 
 compose() {
   docker compose --project-name "$PROJECT" --file "$ROOT_DIR/docker-compose.yml" --file "$ROOT_DIR/docker-compose.demo.yml" "$@"
@@ -61,6 +71,11 @@ case "$command" in
     wait_for_http "http://127.0.0.1:${PORT}/api/v1/health/live"
     echo "Backend restarted; PostgreSQL data and the signed GNN volume were preserved."
     ;;
+  refresh-hosts)
+    compose up -d --no-deps --no-build --force-recreate backend
+    wait_for_http "http://127.0.0.1:${PORT}/api/v1/health/live"
+    echo "Demo backend host allowlist updated; PostgreSQL and model volumes were preserved."
+    ;;
   logs)
     compose logs --tail="${FINGRAPH_DEMO_LOG_LINES:-200}" "${2:-backend}"
     ;;
@@ -68,7 +83,7 @@ case "$command" in
     compose down
     ;;
   *)
-    echo "Usage: $0 {start|events|restart|logs|stop}" >&2
+    echo "Usage: $0 {start|events|restart|refresh-hosts|logs|stop}" >&2
     exit 2
     ;;
 esac
